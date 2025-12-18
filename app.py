@@ -1,37 +1,38 @@
 import streamlit as st
 import pandas as pd
 import pickle
-import numpy as np
+import os
 
-# Load the saved model
-try:
-    with open('Model7/model.pkl', 'rb') as f:
-        model = pickle.load(f)
-except FileNotFoundError:
-    st.error("Model file not found. Please ensure 'Model7/model.pkl' exists.")
+# Get the absolute path to the model file
+# This helps prevent 'File Not Found' errors
+base_path = os.path.dirname(__file__)
+model_path = os.path.join(base_path, 'Model7', 'model.pkl')
 
 st.title("Loan Approval Prediction App")
-st.write("Enter the details below to check the loan approval status.")
 
-# Input fields
-income = st.number_input("Annual Income", min_value=0, value=50000)
-credit_score = st.number_input("Credit Score", min_value=300, max_value=850, value=650)
-loan_amount = st.number_input("Loan Amount Requested", min_value=0, value=20000)
-
-# Predict button
-if st.button("Predict Status"):
-    # Create a dataframe for the input to match feature names
-    features = pd.DataFrame([[income, credit_score, loan_amount]], 
-                            columns=['Income', 'Credit Score', 'Loan Amount'])
+# Check if model exists before loading
+if os.path.exists(model_path):
+    with open(model_path, 'rb') as f:
+        model = pickle.load(f)
     
-    # Make prediction
-    prediction = model.predict(features)
-    
-    # Display result
-    result = prediction[0]
-    if result == 'Approved':
-        st.success(f"Result: {result}")
-    else:
-        st.error(f"Result: {result}")
+    st.write("Enter the details below to check the loan approval status.")
 
-st.info("Note: This model has an accuracy of approximately 54.4%.")
+    # Input fields
+    income = st.number_input("Annual Income", min_value=0, value=67669)
+    credit_score = st.number_input("Credit Score", min_value=300, max_value=900, value=700)
+    loan_amount = st.number_input("Loan Amount Requested", min_value=0, value=45000)
+
+    if st.button("Predict Status"):
+        # Features must match the training column names exactly
+        features = pd.DataFrame([[income, credit_score, loan_amount]], 
+                                columns=['Income', 'Credit Score', 'Loan Amount'])
+        
+        prediction = model.predict(features)
+        
+        if prediction[0] == 'Approved':
+            st.success(f"Result: {prediction[0]}")
+        else:
+            st.error(f"Result: {prediction[0]}")
+else:
+    st.error(f"Error: Could not find 'model.pkl' at {model_path}")
+    st.info("Please make sure you have a folder named 'Model7' with 'model.pkl' inside it.")
